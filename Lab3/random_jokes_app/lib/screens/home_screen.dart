@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../services/api_services.dart';
 import '../widgets/joke_card.dart';
 import 'favorite_screen.dart';
-import '../provider/favorite_jokes_provider.dart';
 import '../models/joke.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,12 +15,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<String>> jokeTypes;
-
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     jokeTypes = ApiServices().fetchJokeTypes();
+    _notificationService.init();
   }
 
   @override
@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>const FavoriteScreen(),
+                  builder: (context) => const FavoriteScreen(),
                 ),
               );
             },
@@ -70,6 +70,26 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          try {
+            Joke randomJoke = await ApiServices().fetchRandomJoke();
+
+            await _notificationService.showDailyJokeNotification(
+                "${randomJoke.setup}\n${randomJoke.punchline}");
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Notification sent: ${randomJoke.setup}')),
+            );
+          } catch (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to fetch joke: $error')),
+            );
+          }
+        },
+        backgroundColor: AppTheme.primaryColor,
+        child: const Icon(Icons.notifications),
       ),
     );
   }
