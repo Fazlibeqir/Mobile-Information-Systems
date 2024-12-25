@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 import 'screens/random_joke_screen.dart';
 import 'screens/favorite_screen.dart';
 import 'provider/favorite_jokes_provider.dart';
+import 'services/notification_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -29,11 +30,18 @@ void main() async {
    String? token = await messaging.getToken();
    print("FCM Token: $token");
 
+   NotificationService notificationService = NotificationService();
+    await notificationService.init();
+
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
   if (message.notification != null) {
     print('Message Title: ${message.notification!.title}');
     print('Message Body: ${message.notification!.body}');
     // Show local notification using flutter_local_notifications
+    notificationService.showNotification(
+        message.notification!.title ?? 'No Title',
+        message.notification!.body ?? 'No Body',
+      );
   }
 });
   runApp(

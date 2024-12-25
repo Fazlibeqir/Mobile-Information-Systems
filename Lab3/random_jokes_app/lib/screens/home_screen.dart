@@ -14,14 +14,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<List<String>> jokeTypes;
+  late Future<List<String>> _jokeTypes;
   final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
-    jokeTypes = ApiServices().fetchJokeTypes();
-    _notificationService.init();
+    _jokeTypes = ApiServices().fetchJokeTypes();
+    _initializeNotificationService();
+  }
+
+  Future<void> _initializeNotificationService() async {
+    try {
+      await _notificationService.init();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to initialize notifications: $e')),
+      );
+    }
+  }
+
+  Future<void> _sendDailyJokeNotification() async {
+    try {
+      // Fetch a random joke
+      Joke randomJoke = await ApiServices().fetchRandomJoke();
+
+      // Schedule the notification
+      await _notificationService.showDailyJokeNotification(
+        "${randomJoke.setup}\n${randomJoke.punchline}",
+      );
+
+      // Notify user about the successful scheduling
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Notification scheduled: ${randomJoke.setup}')),
+      );
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch joke: $error')),
+      );
+    }
   }
 
   @override
@@ -52,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: FutureBuilder<List<String>>(
-        future: jokeTypes,
+        future: _jokeTypes,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -72,22 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            Joke randomJoke = await ApiServices().fetchRandomJoke();
-
-            await _notificationService.showDailyJokeNotification(
-                "${randomJoke.setup}\n${randomJoke.punchline}");
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Notification sent: ${randomJoke.setup}')),
-            );
-          } catch (error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to fetch joke: $error')),
-            );
-          }
-        },
+        onPressed: _sendDailyJokeNotification,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.notifications),
       ),

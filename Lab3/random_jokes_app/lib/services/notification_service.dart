@@ -18,10 +18,28 @@ class NotificationService {
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
 
+  Future<void> showNotification(String title, String body) async {
+    var androidDetails = const AndroidNotificationDetails(
+      'default_channel',
+      'Default',
+      channelDescription: 'This channel is for default notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: false,
+      enableVibration: true,
+    );
+
+    var notificationDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      notificationDetails,
+    );
+  }
   Future<void> showDailyJokeNotification(String joke) async {
-    var scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(days: 1));
-    scheduledTime = tz.TZDateTime(tz.local, scheduledTime.year, scheduledTime.month,
-        scheduledTime.day, 9, 0, 0);
+    var scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10));
 
     var androidDetails = const AndroidNotificationDetails(
       'daily_joke_channel',
